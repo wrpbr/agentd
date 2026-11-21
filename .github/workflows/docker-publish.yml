@@ -1,0 +1,56 @@
+name: Docker & Rules Check
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Validate rule catalogs and SHA-256 hashes
+        run: |
+          jq empty rules/catalogs/github-core.json
+          for pkg in rules/core/*.json; do
+            jq empty "$pkg"
+            pkg_id="$(jq -r '.package_id' "$pkg")"
+            expected="$(jq -r --arg id "$pkg_id" '.packages[] | select(.package_id == $id) | .sha256' rules/catalogs/github-core.json)"
+            actual="$(sha256sum "$pkg" | awk '{print $1}')"
+            test "$expected" = "$actual"
+            echo "Verified $pkg_id ($actual)"
+          done
+      - name: Validate Dockerfile and docker-compose.yml
+        run: |
+          sh -n install.sh
+          sh -n docker/entrypoint.sh
+          docker compose config >/dev/null
+
+  publish-docker:
+    needs: validate
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Build and push Docker Hub image
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          VERSION="$(cat version.txt)"
+          printf '%s' "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          docker build -f Dockerfile -t "wrpbr/agentd:${VERSION}" -t "wrpbr/agentd:latest" .
+          docker push "wrpbr/agentd:${VERSION}"
+          docker push "wrpbr/agentd:latest"

@@ -1,0 +1,8 @@
+interface:
+  display_name: "Safeguard"
+  short_description: "Install and operate AI-agent safety hooks"
+  brand_color: "#246B5A"
+  default_prompt: "Use $safeguard to install or audit Safeguard hooks for this development environment."
+
+policy:
+  allow_implicit_invocation: true

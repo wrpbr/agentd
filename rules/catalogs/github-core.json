@@ -1,0 +1,243 @@
+{
+  "catalog_version": 1,
+  "catalog_id": "github-core",
+  "display_name": "Agentd Core Catalog",
+  "packages": [
+    {
+      "package_id": "agent-governance-core",
+      "package_version": "0.1.0",
+      "display_name": "Agent Governance Core",
+      "description": "Starter guardrails for coding-agent command execution and secret exposure.",
+      "download_url": "../core/agent-governance-core.json",
+      "sha256": "20b5f7f06f3391e791bdcc0cf44939fca2d67b544d57f62e524aa0bbfc4a980c",
+      "tags": [
+        "ai-agents",
+        "command",
+        "supply-chain",
+        "secrets"
+      ],
+      "phases": [
+        "pre_tool_use",
+        "read_guard"
+      ],
+      "rules": [
+        {
+          "rule_id": 910100,
+          "name": "curl_pipe_shell",
+          "description": "Blocks curl or wget output piped directly into sh or bash.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "Bash",
+          "match_field": "lower_command",
+          "pattern": "(curl|wget)[^\\n]{0,200}[|][^\\n]{0,80}(sh|bash)",
+          "action": "deny",
+          "message": "Blocked remote installer piped directly into a shell. Download, inspect, verify checksum, then run explicitly."
+        },
+        {
+          "rule_id": 910101,
+          "name": "secret_read_watch",
+          "description": "Metadata rule for secret-read monitoring in AI-agent governance programs.",
+          "phase": "read_guard",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "package_id": "secret-exfiltration-defense",
+      "package_version": "0.1.0",
+      "display_name": "Secret Exfiltration Defense",
+      "description": "Blocks network exfiltration of .env files, SSH/TLS private keys, cloud credentials, and inline API tokens.",
+      "download_url": "../core/secret-exfiltration-defense.json",
+      "sha256": "0970452f2ea16e7529c5efb88f50a93fffd33fbe819f9a484b3392c69d2f4420",
+      "tags": [
+        "ai-agents",
+        "secrets",
+        "exfiltration",
+        "credentials"
+      ],
+      "phases": [
+        "pre_tool_use",
+        "read_guard"
+      ],
+      "rules": [
+        {
+          "rule_id": 910200,
+          "name": "exfil_env_or_ssh_over_network",
+          "description": "Blocks curl, wget, nc, scp, or rsync commands transmitting .env, SSH keys, or cloud credentials.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "Bash",
+          "match_field": "lower_command",
+          "pattern": "(curl|wget|nc|ncat|scp|rsync)[^\\n]{0,240}(\\.env\\b|id_rsa|id_ed25519|\\.aws/credentials|\\.npmrc|\\.netrc)",
+          "action": "deny",
+          "message": "Blocked potential credential or .env exfiltration over network command."
+        },
+        {
+          "rule_id": 910201,
+          "name": "exfil_inline_api_tokens",
+          "description": "Blocks network commands embedding raw GitHub, GitLab, OpenAI, Anthropic, Slack, or AWS tokens.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "Bash",
+          "match_field": "command",
+          "pattern": "(curl|wget|nc|ncat)[^\\n]{0,240}(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{16,}|sk-ant-[A-Za-z0-9_-]{20,}|sk-proj-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{16,}|AKIA[0-9A-Z]{16})",
+          "action": "deny",
+          "message": "Blocked inline API token or cloud key in outbound network command."
+        },
+        {
+          "rule_id": 910202,
+          "name": "read_ssh_or_cloud_private_keys",
+          "description": "Blocks direct file reads of SSH private keys, GPG private keys, and cloud credential stores.",
+          "phase": "read_guard",
+          "severity": "critical",
+          "match_tool": "*",
+          "match_field": "file_path",
+          "pattern": "(/\\.ssh/id_(rsa|ed25519|ecdsa|dsa)$|/\\.aws/credentials$|/\\.gnupg/private-keys|/\\.netrc$)",
+          "action": "deny",
+          "message": "Blocked direct read of private cryptographic key or credential store."
+        }
+      ]
+    },
+    {
+      "package_id": "production-db-defense",
+      "package_version": "0.1.0",
+      "display_name": "Production Database & Infra Defense",
+      "description": "Blocks destructive database drops, cache wipes, volume teardowns, and force pushes to main branches.",
+      "download_url": "../core/production-db-defense.json",
+      "sha256": "0d16ea8b3091f77ec04fcb8a2ae8a5909d2aebc57a7fa8d9a3fe355a84f84511",
+      "tags": [
+        "ai-agents",
+        "database",
+        "infrastructure",
+        "git"
+      ],
+      "phases": [
+        "pre_tool_use"
+      ],
+      "rules": [
+        {
+          "rule_id": 910300,
+          "name": "sql_drop_or_truncate_database",
+          "description": "Blocks DROP DATABASE, DROP SCHEMA, TRUNCATE TABLE, and Redis FLUSHALL/FLUSHDB commands.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "Bash",
+          "match_field": "lower_command",
+          "pattern": "\\b(drop\\s+(database|schema)|truncate\\s+table|redis-cli[^\\n]{0,120}\\b(flushall|flushdb))\\b",
+          "action": "deny",
+          "message": "Blocked destructive database or cache wipe command. Require explicit human execution."
+        },
+        {
+          "rule_id": 910301,
+          "name": "infra_destructive_teardown",
+          "description": "Blocks terraform destroy, pulumi destroy, kubectl delete namespace/pvc, and docker compose down -v.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "Bash",
+          "match_field": "lower_command",
+          "pattern": "(terraform\\s+destroy|pulumi\\s+destroy|kubectl\\s+delete\\s+(namespace|ns|pvc)\\b|docker(-compose|\\s+compose)\\s+down[^\\n]{0,80}-v\\b)",
+          "action": "deny",
+          "message": "Blocked destructive infrastructure or volume teardown command."
+        },
+        {
+          "rule_id": 910302,
+          "name": "git_force_push_main",
+          "description": "Blocks git push --force or -f targeting main or master.",
+          "phase": "pre_tool_use",
+          "severity": "high",
+          "match_tool": "Bash",
+          "match_field": "lower_command",
+          "pattern": "git\\s+push\\s+[^\\n]{0,120}(--force|-f)\\b[^\\n]{0,80}\\b(main|master)\\b",
+          "action": "deny",
+          "message": "Blocked force push to main/master branch."
+        }
+      ]
+    },
+    {
+      "package_id": "supply-chain-defense",
+      "package_version": "0.1.0",
+      "display_name": "Supply Chain & Hook Tampering Defense",
+      "description": "Blocks unverified remote package execution and tampering with git hooks or SSH authorized_keys.",
+      "download_url": "../core/supply-chain-defense.json",
+      "sha256": "7c311a9cf867e5cc5d3430c333b2f2a5fc639699d921e00a00348832de0a0d92",
+      "tags": [
+        "ai-agents",
+        "supply-chain",
+        "packages",
+        "integrity"
+      ],
+      "phases": [
+        "pre_tool_use"
+      ],
+      "rules": [
+        {
+          "rule_id": 910400,
+          "name": "untrusted_remote_package_exec",
+          "description": "Blocks direct package execution or installation from raw HTTP/tarball URLs via npx, npm, or pip.",
+          "phase": "pre_tool_use",
+          "severity": "high",
+          "match_tool": "Bash",
+          "match_field": "lower_command",
+          "pattern": "\\b(npx[^\\n]{0,80}https?://|npm\\s+(i|install)[^\\n]{0,80}https?://|pip3?\\s+install[^\\n]{0,120}(--extra-index-url|--index-url)\\s+http://)",
+          "action": "deny",
+          "message": "Blocked unverified remote package URL execution."
+        },
+        {
+          "rule_id": 910401,
+          "name": "tamper_git_hooks_or_authorized_keys",
+          "description": "Blocks shell commands modifying .ssh/authorized_keys or disabling security hooks.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "Bash",
+          "match_field": "lower_command",
+          "pattern": "(>{1,2}|tee\\s+[^\\n]{0,80}|cp\\s+[^\\n]{0,80}|mv\\s+[^\\n]{0,80})(\\.ssh/authorized_keys|/etc/sudoers)",
+          "action": "deny",
+          "message": "Blocked modification of SSH authorized_keys or sudoers."
+        }
+      ]
+    },
+    {
+      "package_id": "mcp-tool-defense",
+      "package_version": "0.1.0",
+      "display_name": "MCP & File Tool Boundary Defense",
+      "description": "Protects file write, edit, and MCP tool calls against sensitive system paths and embedded private keys.",
+      "download_url": "../core/mcp-tool-defense.json",
+      "sha256": "a73f1897f6eb2e630ac9b806b3c88f91c38ce5ba37275f877decad3c3d493016",
+      "tags": [
+        "ai-agents",
+        "mcp",
+        "filesystem",
+        "secrets"
+      ],
+      "phases": [
+        "pre_tool_use"
+      ],
+      "rules": [
+        {
+          "rule_id": 910500,
+          "name": "mcp_path_traversal_sensitive_dirs",
+          "description": "Blocks file writes, edits, or tool calls targeting /etc/shadow, /etc/sudoers, or private key files.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "*",
+          "match_field": "file_path",
+          "pattern": "(^/etc/(shadow|gshadow|sudoers)|/\\.ssh/(id_rsa|id_ed25519|authorized_keys)$|/\\.aws/credentials$)",
+          "action": "deny",
+          "message": "Blocked tool access to protected system or credential file path."
+        },
+        {
+          "rule_id": 910501,
+          "name": "mcp_write_embedded_private_key",
+          "description": "Blocks writing PEM/OpenSSH private keys directly into workspace files.",
+          "phase": "pre_tool_use",
+          "severity": "critical",
+          "match_tool": "*",
+          "match_field": "content",
+          "pattern": "-----BEGIN (RSA |OPENSSH |EC |DSA |PRIVATE )?PRIVATE KEY-----",
+          "action": "deny",
+          "message": "Blocked writing private cryptographic key material into file content."
+        }
+      ]
+    }
+  ]
+}

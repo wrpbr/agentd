@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "package_id": "supply-chain-defense",
+  "display_name": "Supply Chain & Hook Tampering Defense",
+  "package_version": "0.1.0",
+  "catalog_id": "github-core",
+  "description": "Blocks unverified remote package execution and tampering with git hooks or SSH authorized_keys.",
+  "category": "supply-chain",
+  "tags": ["ai-agents", "supply-chain", "packages", "integrity"],
+  "rules": [
+    {
+      "rule_id": 910400,
+      "name": "untrusted_remote_package_exec",
+      "description": "Blocks direct package execution or installation from raw HTTP/tarball URLs via npx, npm, or pip.",
+      "phase": "pre_tool_use",
+      "severity": "high",
+      "match_tool": "Bash",
+      "match_field": "lower_command",
+      "pattern": "\\b(npx[^\\n]{0,80}https?://|npm\\s+(i|install)[^\\n]{0,80}https?://|pip3?\\s+install[^\\n]{0,120}(--extra-index-url|--index-url)\\s+http://)",
+      "action": "deny",
+      "message": "Blocked unverified remote package URL execution."
+    },
+    {
+      "rule_id": 910401,
+      "name": "tamper_git_hooks_or_authorized_keys",
+      "description": "Blocks shell commands modifying .ssh/authorized_keys or disabling security hooks.",
+      "phase": "pre_tool_use",
+      "severity": "critical",
+      "match_tool": "Bash",
+      "match_field": "lower_command",
+      "pattern": "(>{1,2}|tee\\s+[^\\n]{0,80}|cp\\s+[^\\n]{0,80}|mv\\s+[^\\n]{0,80})(\\.ssh/authorized_keys|/etc/sudoers)",
+      "action": "deny",
+      "message": "Blocked modification of SSH authorized_keys or sudoers."
+    }
+  ]
+}

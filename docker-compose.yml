@@ -1,0 +1,23 @@
+services:
+  agentd:
+    image: wrpbr/agentd:0.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentd-daemon
+    restart: unless-stopped
+    environment:
+      AGENTD_DAEMON_SOCKET: /run/agentd/agentd-daemon.sock
+      AGENTD_DAEMON_TCP: tcp://0.0.0.0:9477
+      AGENTD_SOCKET_MODE: "0666"
+      AGENTD_AUTO_SYNC: "1"
+      AGENTD_CATALOG_URL: https://agentalog.com/api/agentd/catalog
+    ports:
+      - "127.0.0.1:9477:9477"
+    volumes:
+      - agentd-run:/run/agentd
+      - agentd-state:/var/lib/agentd
+
+volumes:
+  agentd-run:
+  agentd-state:

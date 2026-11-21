@@ -1,0 +1,47 @@
+{
+  "name": "@wrpbr/agentd",
+  "version": "0.1.0",
+  "description": "Native safety hooks, pre-execution defense daemon, and governance skills for AI coding agents.",
+  "type": "module",
+  "bin": {
+    "agentd-npm": "bin/safeguard.js",
+    "safeguard-npm": "bin/safeguard.js"
+  },
+  "scripts": {
+    "test": "node bin/safeguard.js --help && node bin/safeguard.js skills --list && node skills/ai-policy-pack/scripts/render-policy-pack.mjs --format json >/dev/null"
+  },
+  "files": [
+    "bin/",
+    "scripts/install-skill-pack.sh",
+    "skills/",
+    "README.md",
+    "LICENSE",
+    "version.txt"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wrpbr/agentd.git"
+  },
+  "homepage": "https://github.com/wrpbr/agentd#readme",
+  "bugs": {
+    "url": "https://github.com/wrpbr/agentd/issues"
+  },
+  "keywords": [
+    "agentd",
+    "ai-agents",
+    "agent-security",
+    "ai-governance",
+    "codex",
+    "claude-code",
+    "iso-27001",
+    "policy-as-code",
+    "agent-hooks"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

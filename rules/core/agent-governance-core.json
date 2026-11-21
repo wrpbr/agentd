@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "package_id": "agent-governance-core",
+  "display_name": "Agent Governance Core",
+  "package_version": "0.1.0",
+  "catalog_id": "github-core",
+  "description": "Starter guardrails for coding-agent command execution and secret exposure.",
+  "category": "core",
+  "tags": ["ai-agents", "command", "supply-chain", "secrets"],
+  "rules": [
+    {
+      "rule_id": 910100,
+      "name": "curl_pipe_shell",
+      "description": "Blocks curl or wget output piped directly into sh or bash.",
+      "phase": "pre_tool_use",
+      "severity": "critical",
+      "match_tool": "Bash",
+      "match_field": "lower_command",
+      "pattern": "(curl|wget)[^\\n]{0,200}[|][^\\n]{0,80}(sh|bash)",
+      "action": "deny",
+      "message": "Blocked remote installer piped directly into a shell. Download, inspect, verify checksum, then run explicitly."
+    },
+    {
+      "rule_id": 910101,
+      "name": "secret_read_watch",
+      "description": "Metadata rule for secret-read monitoring in AI-agent governance programs.",
+      "phase": "read_guard",
+      "severity": "high"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "package_id": "mcp-tool-defense",
+  "display_name": "MCP & File Tool Boundary Defense",
+  "package_version": "0.1.0",
+  "catalog_id": "github-core",
+  "description": "Protects file write, edit, and MCP tool calls against sensitive system paths and embedded private keys.",
+  "category": "mcp",
+  "tags": ["ai-agents", "mcp", "filesystem", "secrets"],
+  "rules": [
+    {
+      "rule_id": 910500,
+      "name": "mcp_path_traversal_sensitive_dirs",
+      "description": "Blocks file writes, edits, or tool calls targeting /etc/shadow, /etc/sudoers, or private key files.",
+      "phase": "pre_tool_use",
+      "severity": "critical",
+      "match_tool": "*",
+      "match_field": "file_path",
+      "pattern": "(^/etc/(shadow|gshadow|sudoers)|/\\.ssh/(id_rsa|id_ed25519|authorized_keys)$|/\\.aws/credentials$)",
+      "action": "deny",
+      "message": "Blocked tool access to protected system or credential file path."
+    },
+    {
+      "rule_id": 910501,
+      "name": "mcp_write_embedded_private_key",
+      "description": "Blocks writing PEM/OpenSSH private keys directly into workspace files.",
+      "phase": "pre_tool_use",
+      "severity": "critical",
+      "match_tool": "*",
+      "match_field": "content",
+      "pattern": "-----BEGIN (RSA |OPENSSH |EC |DSA |PRIVATE )?PRIVATE KEY-----",
+      "action": "deny",
+      "message": "Blocked writing private cryptographic key material into file content."
+    }
+  ]
+}

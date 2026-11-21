@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "package_id": "production-db-defense",
+  "display_name": "Production Database & Infra Defense",
+  "package_version": "0.1.0",
+  "catalog_id": "github-core",
+  "description": "Blocks destructive database drops, cache wipes, volume teardowns, and force pushes to main branches.",
+  "category": "operations",
+  "tags": ["ai-agents", "database", "infrastructure", "git"],
+  "rules": [
+    {
+      "rule_id": 910300,
+      "name": "sql_drop_or_truncate_database",
+      "description": "Blocks DROP DATABASE, DROP SCHEMA, TRUNCATE TABLE, and Redis FLUSHALL/FLUSHDB commands.",
+      "phase": "pre_tool_use",
+      "severity": "critical",
+      "match_tool": "Bash",
+      "match_field": "lower_command",
+      "pattern": "\\b(drop\\s+(database|schema)|truncate\\s+table|redis-cli[^\\n]{0,120}\\b(flushall|flushdb))\\b",
+      "action": "deny",
+      "message": "Blocked destructive database or cache wipe command. Require explicit human execution."
+    },
+    {
+      "rule_id": 910301,
+      "name": "infra_destructive_teardown",
+      "description": "Blocks terraform destroy, pulumi destroy, kubectl delete namespace/pvc, and docker compose down -v.",
+      "phase": "pre_tool_use",
+      "severity": "critical",
+      "match_tool": "Bash",
+      "match_field": "lower_command",
+      "pattern": "(terraform\\s+destroy|pulumi\\s+destroy|kubectl\\s+delete\\s+(namespace|ns|pvc)\\b|docker(-compose|\\s+compose)\\s+down[^\\n]{0,80}-v\\b)",
+      "action": "deny",
+      "message": "Blocked destructive infrastructure or volume teardown command."
+    },
+    {
+      "rule_id": 910302,
+      "name": "git_force_push_main",
+      "description": "Blocks git push --force or -f targeting main or master.",
+      "phase": "pre_tool_use",
+      "severity": "high",
+      "match_tool": "Bash",
+      "match_field": "lower_command",
+      "pattern": "git\\s+push\\s+[^\\n]{0,120}(--force|-f)\\b[^\\n]{0,80}\\b(main|master)\\b",
+      "action": "deny",
+      "message": "Blocked force push to main/master branch."
+    }
+  ]
+}

@@ -31,31 +31,19 @@ Install and configure agentd (https://github.com/wrpbr/agentd) on this machine t
 
 ---
 
-## 2. Run in Docker in 10 Seconds (Socket or TCP for Any Agent)
+## 2. Run in Docker in 10 Seconds (Zero-Config for Local Agents)
 
-Run `agentd-daemon` inside an isolated Docker container with all 5 verified defense rule packages preloaded and synced with Agentalog. Expose either a shared Unix domain socket (`/run/agentd/agentd-daemon.sock`) or a TCP endpoint (`tcp://127.0.0.1:9477`) to your agents on the host or in other containers:
+Any developer or AI agent can download just `docker-compose.yml` and start `agentd` in one command. The container automatically wires the local hook clients into your `$HOME` (`Claude Code`, `Codex`, `Pi`, `Gemini CLI`, `Antigravity`, `Cursor`), syncs the 5 verified rule packages from [Agentalog](https://agentalog.com/api/agentd/catalog), and exposes both the default Unix socket (`/tmp/safeguard/safeguard-daemon.sock`) and TCP port (`127.0.0.1:9477`):
 
 ```bash
-# Option A: Docker Compose (recommended)
-git clone https://github.com/wrpbr/agentd.git
-cd agentd
+# Download only docker-compose.yml and start agentd
+curl -fsSLO https://raw.githubusercontent.com/wrpbr/agentd/main/docker-compose.yml
 docker compose up -d
-
-# Option B: Direct docker run from Docker Hub
-mkdir -p /tmp/agentd-run
-docker run -d --name agentd-daemon --restart unless-stopped \
-  -p 127.0.0.1:9477:9477 \
-  -v /tmp/agentd-run:/run/agentd \
-  wrpbr/agentd:latest
 ```
 
-Connect your agents (Pi, Claude Code, Codex, Gemini CLI, Antigravity, Cursor) to the containerized daemon:
+That's it — your local coding agents automatically discover `/tmp/safeguard/safeguard-daemon.sock` with zero extra environment variables. If you connect from another container or over TCP (macOS / Windows / remote Docker network), point the agent at:
 
 ```bash
-# Connect via shared Unix socket volume:
-export AGENTD_DAEMON_SOCKET=/tmp/agentd-run/agentd-daemon.sock
-
-# Or connect via TCP (works across Docker networks, macOS, and Windows without volume sharing):
 export AGENTD_DAEMON_SOCKET=tcp://127.0.0.1:9477
 ```
 

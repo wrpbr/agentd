@@ -1,0 +1,13 @@
+{
+  "name": "Workspace Protected by agentd",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "runArgs": [
+    "--init"
+  ],
+  "containerEnv": {
+    "AGENTD_DAEMON_SOCKET": "/tmp/safeguard/safeguard-daemon.sock",
+    "AGENTD_CATALOG_URL": "https://agentalog.com/api/agentd/catalog"
+  },
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/wrpbr/agentd/main/install.sh | AGENTD_PORTABLE=1 sh && ~/.local/bin/agentd --catalog-add https://agentalog.com/api/agentd/catalog || true && ~/.local/bin/agentd --catalog-sync && ~/.local/bin/agentd --catalog-install agent-governance-core --catalog-install secret-exfiltration-defense --catalog-install production-db-defense --catalog-install supply-chain-defense --catalog-install mcp-tool-defense",
+  "postStartCommand": "nohup ~/.local/share/agentd/agentd-daemon --socket /tmp/safeguard/safeguard-daemon.sock >/tmp/agentd-daemon.log 2>&1 &"
+}

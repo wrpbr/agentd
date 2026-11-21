@@ -47,6 +47,12 @@ That's it — your local coding agents automatically discover `/tmp/safeguard/sa
 export AGENTD_DAEMON_SOCKET=tcp://127.0.0.1:9477
 ```
 
+### Other Container & Cloud Runtime Templates Included
+
+- **Podman & Podman Quadlet (Rootless):** Run `podman compose up -d` with the same `docker-compose.yml`, or install [`containers/podman/agentd.container`](containers/podman/agentd.container) into `~/.config/containers/systemd/` for rootless systemd management on Fedora, RHEL, Rocky, and AlmaLinux.
+- **VS Code / Cursor Dev Containers & GitHub Codespaces:** Copy [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json) into your project to automatically provision `agentd` and all 5 Agentalog rule packages whenever a Dev Container, Cursor workspace, or Codespace starts.
+- **Kubernetes Sidecar Pod:** Apply [`kubernetes/agentd-sidecar.yaml`](kubernetes/agentd-sidecar.yaml) to run `wrpbr/agentd` as a low-overhead sidecar container sharing an in-memory Unix socket (`/run/agentd/safeguard-daemon.sock`) and TCP port `9477` with autonomous coding agent pods.
+
 ---
 
 ## 3. Install Native Prebuilt Packages (Linux `amd64` / `arm64` & macOS)

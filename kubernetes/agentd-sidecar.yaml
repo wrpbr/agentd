@@ -1,0 +1,61 @@
+# Kubernetes Pod with agentd as a sidecar defense daemon for autonomous coding agents
+# Shares both a Unix domain socket (/run/agentd/safeguard-daemon.sock via emptyDir)
+# and localhost TCP (tcp://127.0.0.1:9477) with the agent container in the same Pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: coding-agent-protected
+  labels:
+    app.kubernetes.io/name: coding-agent
+    app.kubernetes.io/part-of: agentd-defense
+spec:
+  containers:
+    - name: agentd-daemon
+      image: docker.io/wrpbr/agentd:0.1.0
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: AGENTD_DAEMON_SOCKET
+          value: "/run/agentd/safeguard-daemon.sock"
+        - name: AGENTD_DAEMON_TCP
+          value: "tcp://0.0.0.0:9477"
+        - name: AGENTD_SOCKET_MODE
+          value: "0666"
+        - name: AGENTD_AUTO_SYNC
+          value: "1"
+        - name: AGENTD_CATALOG_URL
+          value: "https://agentalog.com/api/agentd/catalog"
+        - name: AGENTD_AUTO_WIRE_HOST
+          value: "0"
+      ports:
+        - name: agentd-tcp
+          containerPort: 9477
+          protocol: TCP
+      resources:
+        requests:
+          cpu: "50m"
+          memory: "64Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      volumeMounts:
+        - name: agentd-socket
+          mountPath: /run/agentd
+        - name: agentd-state
+          mountPath: /var/lib/agentd
+    - name: coding-agent
+      image: node:22-bookworm-slim
+      command: ["sleep", "infinity"]
+      env:
+        - name: AGENTD_DAEMON_SOCKET
+          value: "/run/agentd/safeguard-daemon.sock"
+        - name: SAFEGUARD_DAEMON_SOCKET
+          value: "/run/agentd/safeguard-daemon.sock"
+      volumeMounts:
+        - name: agentd-socket
+          mountPath: /run/agentd
+  volumes:
+    - name: agentd-socket
+      emptyDir:
+        medium: Memory
+    - name: agentd-state
+      emptyDir: {}

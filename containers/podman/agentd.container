@@ -1,0 +1,30 @@
+# Podman Quadlet rootless unit for agentd (https://github.com/wrpbr/agentd)
+# Install to: ~/.config/containers/systemd/agentd.container
+# Then run:   systemctl --user daemon-reload && systemctl --user start agentd.service
+
+[Unit]
+Description=agentd runtime defense daemon (Podman rootless container)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/wrpbr/agentd:latest
+ContainerName=agentd-daemon
+PublishPort=127.0.0.1:9477:9477
+Volume=/tmp/safeguard:/run/agentd:Z
+Volume=%h:/host-home:Z
+Volume=agentd-state.volume:/var/lib/agentd:Z
+Environment=AGENTD_DAEMON_SOCKET=/run/agentd/safeguard-daemon.sock
+Environment=AGENTD_DAEMON_TCP=tcp://0.0.0.0:9477
+Environment=AGENTD_SOCKET_MODE=0666
+Environment=AGENTD_AUTO_SYNC=1
+Environment=AGENTD_CATALOG_URL=https://agentalog.com/api/agentd/catalog
+Environment=AGENTD_HOST_HOME_PATH=%h
+Environment=AGENTD_AUTO_WIRE_HOST=1
+
+[Service]
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target
